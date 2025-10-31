@@ -14,7 +14,7 @@ public class DataFetchScheduler {
         this.asteroidService = asteroidService;
     }
 
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 2 * * *")
     public void fetchData() {
         try {
             asteroidService.fetchAndSaveAsteroids();
