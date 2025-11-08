@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.time.LocalDate;
+
 @Component
 public class NasaCadClient {
     private final WebClient webClient;
@@ -16,7 +18,18 @@ public class NasaCadClient {
     }
 
     public String fetchCloseApproachData() {
-        String url = cadUrl + "?date-min=2025-10-30&date-max=2025-12-31&dist-max=0.5";
+        LocalDate today = LocalDate.now();
+        LocalDate twoMonthsLater = today.plusMonths(2);
+
+        String dateMin = today.toString();
+        String dateMax = twoMonthsLater.toString();
+
+
+        String url = cadUrl +
+                "?date-min=" + dateMin +
+                "&date-max=" + dateMax +
+                "&dist-max=0.5";
+
         return webClient.get()
                 .uri(url)
                 .retrieve()

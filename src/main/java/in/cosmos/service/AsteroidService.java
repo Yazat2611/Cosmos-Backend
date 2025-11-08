@@ -2,7 +2,7 @@ package in.cosmos.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import in.cosmos.client.NasaCadClient;
-import in.cosmos.dto.NasaApiResponse;
+import in.cosmos.dto.NasaApiResponseDTO;
 import in.cosmos.model.AsteroidApproach;
 import in.cosmos.repository.AsteroidApproachRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +37,7 @@ public class AsteroidService {
         log.info("Got JSON response from NASA successfully");
 
         try {
-            NasaApiResponse apiResponse = objectMapper.readValue(jsonString,NasaApiResponse.class);
+            NasaApiResponseDTO apiResponse = objectMapper.readValue(jsonString, NasaApiResponseDTO.class);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MMM-dd HH:mm", Locale.ENGLISH);
 
             log.info("Parsed Json Successfully");

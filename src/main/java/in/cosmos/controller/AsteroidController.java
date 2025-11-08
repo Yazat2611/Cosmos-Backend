@@ -1,12 +1,11 @@
 package in.cosmos.controller;
 
+import in.cosmos.dto.AsteroidDetailDTO;
 import in.cosmos.model.AsteroidApproach;
+import in.cosmos.service.AsteroidDetailsService;
 import in.cosmos.service.AsteroidService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -15,9 +14,11 @@ import java.util.List;
 public class AsteroidController {
 
     private final AsteroidService asteroidService;
+    private final AsteroidDetailsService asteroidDetailsService;
 
-    public AsteroidController(AsteroidService asteroidService) {
+    public AsteroidController(AsteroidService asteroidService, AsteroidDetailsService asteroidDetailsService) {
         this.asteroidService = asteroidService;
+        this.asteroidDetailsService = asteroidDetailsService;
     }
 
     @PostMapping("/fetch")
@@ -31,5 +32,12 @@ public class AsteroidController {
         List<AsteroidApproach> approaches = asteroidService.getUpcomingApproaches();
 
         return  ResponseEntity.ok(approaches);
+    }
+
+
+    @GetMapping("/details/{designation}")
+    public ResponseEntity<AsteroidDetailDTO> getAsteroidDetails(@PathVariable String designation) {
+        AsteroidDetailDTO details = asteroidDetailsService.getAsteroidDetails(designation);
+        return ResponseEntity.ok(details);
     }
 }
