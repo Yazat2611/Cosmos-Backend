@@ -17,7 +17,7 @@ public class NasaSbdbClient {
     }
 
     public String fetchAsteroidDetails(String designation) {
-        String url = baseUrl + "?sstr=" + designation;
+        String url = baseUrl + "?sstr=" + designation + "&full-prec=1";
 
         return webClient.get()
                 .uri(url)

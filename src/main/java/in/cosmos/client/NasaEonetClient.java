@@ -22,7 +22,7 @@ public class NasaEonetClient {
         log.info("Fetching earth events");
         try {
             String response = webClient.get()
-                    .uri(baseUrl + "/events?status=open&limit=10")
+                    .uri(baseUrl + "/events?status=open&limit=200")
                     .retrieve()
                     .bodyToMono(String.class)
                     .block();

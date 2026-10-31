@@ -10,6 +10,7 @@ import in.cosmos.repository.EarthEventGeometryRepository;
 import in.cosmos.repository.EarthEventRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -30,6 +31,7 @@ public class EarthEventService {
         this.objectMapper = objectMapper;
     }
 
+    @Transactional
     public void fetchAndSaveEvents() throws JsonProcessingException {
         log.info("Fetching Earth Events");
 
