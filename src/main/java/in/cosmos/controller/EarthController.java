@@ -4,7 +4,9 @@ import in.cosmos.model.EarthEvents;
 import in.cosmos.service.EarthEventService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -18,6 +20,12 @@ public class EarthController {
 
     public  EarthController(EarthEventService earthEventService) {
         this.earthEventService =   earthEventService;
+    }
+
+    @PostMapping("/fetch")
+    public ResponseEntity<String> fetchEvents() throws JsonProcessingException {
+        earthEventService.fetchAndSaveEvents();
+        return ResponseEntity.ok("Earth events fetched and saved successfully");
     }
 
     @GetMapping

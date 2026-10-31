@@ -29,24 +29,24 @@ public class AsteroidApproach {
     @Column(name="close_approach_date")
     private LocalDateTime closeApproachDate;
 
-    @Column(name="min_distance")
+    @Column(name="min_distance", precision = 20, scale = 10)
     private BigDecimal minimumDistance;
 
-    @Column(name="max_distance")
+    @Column(name="max_distance", precision = 20, scale = 10)
     private BigDecimal maximumDistance;
 
-    @Column(name = "relative_velocity")
+    @Column(name = "relative_velocity", precision = 20, scale = 10)
     private BigDecimal relativeVelocity;
 
-    @Column(name = "inf_velocity")
+    @Column(name = "inf_velocity", precision = 20, scale = 10)
     private BigDecimal infVelocity;
 
     @Column(name = "time_uncertanity")
     private String timeUncertanity;
 
-    @Column(name = "absolute_magnitude")
+    @Column(name = "absolute_magnitude", precision = 20, scale = 10)
     private BigDecimal absoluteMagnitude;
 
-    @Column(name="distance_au")
+    @Column(name="distance_au", precision = 20, scale = 10)
     private BigDecimal distanceAu;
 }
