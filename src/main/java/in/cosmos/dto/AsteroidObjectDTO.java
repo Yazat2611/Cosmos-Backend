@@ -15,7 +15,7 @@ public class AsteroidObjectDTO {
     private String des;
     @JsonProperty("orbit_class")
     private OrbitalClassDTO orbitClass;
-    @JsonProperty("full_name")
+    @JsonProperty("fullname")
     private String fullName;
     private String kind;
     private String prefix;

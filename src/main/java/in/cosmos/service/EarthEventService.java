@@ -139,10 +139,13 @@ public class EarthEventService {
                     geometry.setGeometryType(geoNode.has("type") ? geoNode.get("type").asText() : "Point");
 
                     // Coordinates (required)
-                    JsonNode coords = geoNode.get("coordinates");
-                    if (coords != null && coords.isArray() && coords.size() >= 2) {
-                        geometry.setLongitude(coords.get(0).asDouble());
-                        geometry.setLatitude(coords.get(1).asDouble());
+                    // Point is [lon, lat]; Polygon is [[[lon, lat], ...]], stored as its centroid
+                    double[] lonLat = "Polygon".equals(geometry.getGeometryType())
+                            ? polygonCentroid(geoNode.get("coordinates"))
+                            : pointCoordinates(geoNode.get("coordinates"));
+                    if (lonLat != null) {
+                        geometry.setLongitude(lonLat[0]);
+                        geometry.setLatitude(lonLat[1]);
 
                         event.getGeometries().add(geometry);
                     } else {
@@ -157,6 +160,39 @@ public class EarthEventService {
 
         earthEventRepository.save(event);
         log.debug("Saved/Updated event: {} with {} geometry points", eventId, event.getGeometries().size());
+    }
+
+    private double[] pointCoordinates(JsonNode coords) {
+        if (coords == null || !coords.isArray() || coords.size() < 2
+                || !coords.get(0).isNumber() || !coords.get(1).isNumber()) {
+            return null;
+        }
+        return new double[]{coords.get(0).asDouble(), coords.get(1).asDouble()};
+    }
+
+    private double[] polygonCentroid(JsonNode coords) {
+        if (coords == null || !coords.isArray() || coords.size() == 0) {
+            return null;
+        }
+        // Outer ring only; GeoJSON rings repeat the first vertex at the end
+        JsonNode ring = coords.get(0);
+        int count = ring.size();
+        if (count > 1 && ring.get(0).equals(ring.get(count - 1))) {
+            count--;
+        }
+
+        double lonSum = 0;
+        double latSum = 0;
+        int valid = 0;
+        for (int i = 0; i < count; i++) {
+            double[] vertex = pointCoordinates(ring.get(i));
+            if (vertex != null) {
+                lonSum += vertex[0];
+                latSum += vertex[1];
+                valid++;
+            }
+        }
+        return valid == 0 ? null : new double[]{lonSum / valid, latSum / valid};
     }
 
     public List<EarthEvents> getAllEvents() {

@@ -10,10 +10,13 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -45,20 +48,37 @@ public class AsteroidService {
 
             List<AsteroidApproach> asteroidApproaches = new ArrayList<>();
 
-            for(List<String> row:apiResponse.getData()) {
-                AsteroidApproach asteroidApproach = new AsteroidApproach();
+            if (apiResponse.getData() == null) {
+                log.info("No close approaches in range");
+                return;
+            }
 
-                asteroidApproach.setDesignation(row.get(0));
-                asteroidApproach.setOrbitId(row.get(1));
-                asteroidApproach.setJulianDate(Double.parseDouble(row.get(2)));
-                asteroidApproach.setCloseApproachDate(LocalDateTime.parse(row.get(3), formatter));
-                asteroidApproach.setDistanceAu(new BigDecimal(row.get(4)));
-                asteroidApproach.setMinimumDistance(new BigDecimal(row.get(5)));
-                asteroidApproach.setMaximumDistance(new BigDecimal(row.get(6)));
-                asteroidApproach.setRelativeVelocity(new BigDecimal(row.get(7)));
-                asteroidApproach.setInfVelocity(new BigDecimal(row.get(8)));
-                asteroidApproach.setTimeUncertanity(row.get(9));
-                asteroidApproach.setAbsoluteMagnitude(new BigDecimal(row.get(10)));
+            // Look columns up by name so a change in CAD's field order doesn't shift values
+            Map<String, Integer> col = new HashMap<>();
+            for (int i = 0; i < apiResponse.getFields().size(); i++) {
+                col.put(apiResponse.getFields().get(i), i);
+            }
+
+            for(List<String> row:apiResponse.getData()) {
+                String designation = row.get(col.get("des"));
+                LocalDateTime closeApproachDate = LocalDateTime.parse(row.get(col.get("cd")), formatter);
+
+                // Update the existing row for this approach instead of inserting a duplicate
+                AsteroidApproach asteroidApproach = asteroidApproachRepository
+                        .findFirstByDesignationAndCloseApproachDate(designation, closeApproachDate)
+                        .orElse(new AsteroidApproach());
+
+                asteroidApproach.setDesignation(designation);
+                asteroidApproach.setOrbitId(row.get(col.get("orbit_id")));
+                asteroidApproach.setJulianDate(Double.parseDouble(row.get(col.get("jd"))));
+                asteroidApproach.setCloseApproachDate(closeApproachDate);
+                asteroidApproach.setDistanceAu(toDecimal(row, col, "dist"));
+                asteroidApproach.setMinimumDistance(toDecimal(row, col, "dist_min"));
+                asteroidApproach.setMaximumDistance(toDecimal(row, col, "dist_max"));
+                asteroidApproach.setRelativeVelocity(toDecimal(row, col, "v_rel"));
+                asteroidApproach.setInfVelocity(toDecimal(row, col, "v_inf"));
+                asteroidApproach.setTimeUncertanity(row.get(col.get("t_sigma_f")));
+                asteroidApproach.setAbsoluteMagnitude(toDecimal(row, col, "h"));
 
                 asteroidApproaches.add(asteroidApproach);
             }
@@ -69,7 +89,15 @@ public class AsteroidService {
         }
     }
 
+    private BigDecimal toDecimal(List<String> row, Map<String, Integer> col, String field) {
+        Integer index = col.get(field);
+        String value = index == null ? null : row.get(index);
+        return value == null ? null : new BigDecimal(value);
+    }
+
     public List<AsteroidApproach> getUpcomingApproaches() {
-        return asteroidApproachRepository.findAll();
+        // CAD dates are UTC
+        return asteroidApproachRepository.findByCloseApproachDateGreaterThanEqualOrderByCloseApproachDateAsc(
+                LocalDateTime.now(ZoneOffset.UTC));
     }
 }
