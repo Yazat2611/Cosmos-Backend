@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import in.cosmos.client.NasaCadClient;
 import in.cosmos.dto.NasaApiResponseDTO;
 import in.cosmos.model.AsteroidApproach;
+import in.cosmos.model.AsteroidDetails;
 import in.cosmos.repository.AsteroidApproachRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -25,13 +29,16 @@ public class AsteroidService {
     private final AsteroidApproachRepository asteroidApproachRepository;
     private final NasaCadClient nasaCadClient;
     private final ObjectMapper objectMapper;
+    private final AsteroidDetailsService asteroidDetailsService;
 
     public AsteroidService(AsteroidApproachRepository asteroidApproachRepository
     , NasaCadClient nasaCadClient
-    , ObjectMapper objectMapper) {
+    , ObjectMapper objectMapper
+    , AsteroidDetailsService asteroidDetailsService) {
         this.asteroidApproachRepository = asteroidApproachRepository;
         this.nasaCadClient = nasaCadClient;
         this.objectMapper = objectMapper;
+        this.asteroidDetailsService = asteroidDetailsService;
     }
 
     public void fetchAndSaveAsteroids() {
@@ -97,7 +104,28 @@ public class AsteroidService {
 
     public List<AsteroidApproach> getUpcomingApproaches() {
         // CAD dates are UTC
-        return asteroidApproachRepository.findByCloseApproachDateGreaterThanEqualOrderByCloseApproachDateAsc(
+        List<AsteroidApproach> approaches = asteroidApproachRepository.findByCloseApproachDateGreaterThanEqualOrderByCloseApproachDateAsc(
                 LocalDateTime.now(ZoneOffset.UTC));
+
+        // Hazard flag and names come from the stored SBDB lookups, so clients don't have to ask NASA per asteroid
+        Set<String> designations = approaches.stream().map(AsteroidApproach::getDesignation).collect(Collectors.toSet());
+        Map<String, AsteroidDetails> details = asteroidDetailsService.findAll(designations);
+        for (AsteroidApproach approach : approaches) {
+            AsteroidDetails d = details.get(approach.getDesignation());
+            if (d != null) {
+                approach.setPha(d.getPha());
+                approach.setFullName(d.getFullName());
+                approach.setOrbitClass(d.getOrbitClassName());
+            }
+        }
+        return approaches;
+    }
+
+    // Removes approaches that have already happened, then details no approach refers to any more
+    @Transactional
+    public void deletePassedApproaches() {
+        int approaches = asteroidApproachRepository.deletePassedBefore(LocalDateTime.now(ZoneOffset.UTC));
+        int details = asteroidDetailsService.deleteOrphans();
+        log.info("Cleanup: deleted {} passed approaches and {} unused asteroid details", approaches, details);
     }
 }

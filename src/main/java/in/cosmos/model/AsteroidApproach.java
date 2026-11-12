@@ -49,4 +49,14 @@ public class AsteroidApproach {
 
     @Column(name="distance_au", precision = 20, scale = 10)
     private BigDecimal distanceAu;
+
+    // Filled from asteroid_details for the API response; null until SBDB has been looked up
+    @Transient
+    private Boolean pha;
+
+    @Transient
+    private String fullName;
+
+    @Transient
+    private String orbitClass;
 }
