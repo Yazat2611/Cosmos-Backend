@@ -29,6 +29,13 @@ services:
     # Bound to localhost only; the frontend container or a reverse proxy sits in front
     ports:
       - "127.0.0.1:8080:8080"
+    networks:
+      default:
+        aliases: [backend]
 
 volumes:
   pgdata:
+
+networks:
+  default:
+    name: cosmos
